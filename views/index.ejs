@@ -1,0 +1,154 @@
+<!DOCTYPE HTML>
+<!--
+	Stellar by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>Oral Presentation Automatic Feedback (OPAF)</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<script src="assets/js/jquery.min.js"></script>
+		<script type ="text/javascript">
+	      $(document).ready(function(){
+            var previewing = false;
+						var recording = false;
+				     $('#start_preview').click(function(){
+                  if(!previewing) {
+								     $('#responsePreview').text("Starting camera. Please wait..");
+					           $.ajax({
+						             type: 'Get',
+						             url: '/start_preview',
+												 success: function(data2){
+													 setTimeout(function(){
+	 												 			$('#cam_stream').attr('src', window.location.protocol + '//' + window.location.hostname + ':8080/?action=stream');
+														}, 1000);
+							              $('#responsePreview').text(data2);
+											      $('#start_preview').text("Stop Preview")
+														previewing=true;
+						             }
+									   })
+								  }
+									else {
+										 $('#responsePreview').text("Stoping camera. Please wait..");
+										 $.ajax({
+					              type: 'Get',
+					              url : '/stop_preview',
+								        success: function(data){
+					                 $('#responsePreview').text(data);
+											     $('#cam_stream').attr('src', "images/pic01.jpg");
+													 previewing=false;
+													 $('#start_preview').text("Start Preview")
+					              }
+					           });
+					        };
+									/**$("#response").text("Preview Started");
+					          $('#cam_stream').attr('src', window.location.protocol + '//' + window.location.hostname + ':8090/stream');
+					          **/
+					       });
+				     });
+
+	  </script>
+
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+	</head>
+	<body class="is-preload">
+
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+				<!-- Header -->
+					<header id="header" class="alt">
+						<span class="logo"><img src="images/presentation.svg" height=100 alt="" /></span>
+						<h1>OPAF</h1>
+						<p>Oral Presentation Automatic Feedback<br />
+						built by <a href="https://twitter.com/xaoch">@xaoch</a> and <a href="https://steinhardt.nyu.edu/learn/">NYU LEARN</a>.</p>
+					</header>
+
+				<!-- Nav -->
+					<nav id="nav">
+						<ul>
+							<li><a href="#preview" class="active">Preview</a></li>
+							<li><a href="#recording">Recording</a></li>
+						</ul>
+					</nav>
+
+				<!-- Main -->
+					<div id="main">
+
+						<!-- Preview-->
+							<section id="preview" class="main">
+								<div class="spotlight">
+									<div class="content">
+										<header class="major">
+											<h2>Preview Camera Input</h2>
+										</header>
+										<p>Prewiew allows you to position the OPAF sensor in a position to capture the presenter.  Make sure that the presenter
+											is the biggest person in the frame and that the frame include an image at least from head to knees.</p>
+										<ul class="actions">
+											<li><a id="start_preview" class="button">Start Preview</a></li>
+										</ul>
+									</div>
+									<img id="cam_stream" src="images/pic01.jpg" alt="" />
+								</div>
+							</section>
+
+						<!-- First Section -->
+							<section id="recording" class="main special">
+								<header class="major">
+									<h2>Record Oral Presentation</h2>
+								</header>
+								<form action="/recording" method="post" encType="multipart/form-data">
+								<ul class="features">
+									<li>
+										<span class="icon solid major style1 fa-address-card"></span>
+										<h3>Identification</h3>
+										<input name="id" type="text" placeholder="Enter email" required>
+										<p>Add the presenter's email as an identification</p>
+									</li>
+									<li>
+										<span class="icon major style3 fa-file-powerpoint"></span>
+										<h3>Presentation</h3>
+                    <input type="file" name="file" id="file" class="inputfile" />
+										<label for="file"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="17" viewBox="0 0 20 17"><path d="M10 0l-5.2 4.9h3.3v5.1h3.8v-5.1h3.3l-5.2-4.9zm9.3 11.5l-3.2-2.1h-2l3.4 2.6h-3.5c-.1 0-.2.1-.2.1l-.8 2.3h-6l-.8-2.2c-.1-.1-.1-.2-.2-.2h-3.6l3.4-2.6h-2l-3.2 2.1c-.4.3-.7 1-.6 1.5l.6 3.1c.1.5.7.9 1.2.9h16.3c.6 0 1.1-.4 1.3-.9l.6-3.1c.1-.5-.2-1.2-.7-1.5z"/></svg> <span>Choose a file&hellip;</span></label>
+										<p>To obtain an analysis of your slides, upload your presentation in PPTX format.  If you do not want this analysis, leave it blank.</p>
+									</li>
+									<li>
+										<span class="icon major style5 fa-envelope"></span>
+										<h3>Email Report</h3>
+										<input type="checkbox" id="email" name="email" checked>
+                    <label for="email">Email report</label>
+										<p>Check if you want to send the report to the presenter's email.  If it is unchecked, it will only be accesible in this system.</p>
+									</li>
+								</ul>
+								<footer class="major">
+									<ul class="actions special">
+										<li><input type="submit" class="button" value="Start Recording"></li>
+									</ul>
+								</footer>
+							</form>
+							</section>
+
+
+
+				<!-- Footer -->
+					<footer id="footer">
+
+					</footer>
+
+			</div>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.scrollex.min.js"></script>
+			<script src="assets/js/jquery.scrolly.min.js"></script>
+			<script src="assets/js/browser.min.js"></script>
+			<script src="assets/js/breakpoints.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<script src="assets/js/main.js"></script>
+			<script src="assets/js/custom-file-input.js"></script>
+
+	</body>
+</html>

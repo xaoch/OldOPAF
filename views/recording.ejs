@@ -1,0 +1,121 @@
+<!DOCTYPE HTML>
+<!--
+	Stellar by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>Oral Presentation Automatic Feedback (OPAF)</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<script src="assets/js/jquery.min.js"></script>
+    <script type ="text/javascript">
+      var sec = 0;
+      function pad ( val ) { return val > 9 ? val : "0" + val; }
+      var clockInterval = setInterval( function(){
+         document.getElementById("seconds").innerHTML=pad(++sec%60);
+         document.getElementById("minutes").innerHTML=pad(parseInt(sec/60,10));
+     }, 1000);
+     function stopClock() {clearInterval(clockInterval)};
+    </script>
+		<script type ="text/javascript">
+         $(document).ready(function(){
+            $('#waiting_report').hide();
+            $('#report_button').hide();
+            function check_report(){
+              var checkInterval = setInterval( function(){
+                $.ajax({
+                  type: 'Get',
+                  url: '/check_report',
+                  data: {
+                    dir_name: "<%= dir_name %>",
+                  },
+                  success: function(data3){
+                    if(data3=="Finished"){
+                      $('#waiting_report').fadeOut();
+                      $('#report_button').fadeIn();
+                      clearInterval(checkInterval);
+                    }
+                  }
+                });
+              }, 1000);
+
+            }
+            var previewing = false;
+						var recording = false;
+            $('#stop_recording').click(function(){
+                $.ajax({
+                    type: 'Get',
+                    url: '/stop_recording',
+                    data: {
+                      dir_name: "<%= dir_name %>",
+                    },
+                    success: function(data2){
+                       check_report();
+                       setTimeout(function(){
+                       stopClock();
+                       $('#stop_button').fadeOut();
+                       $('#waiting_report').fadeIn();
+                       $('#status').text(data2);;
+                       }, 1000);
+
+                      }
+                    });
+            });
+
+
+					  });
+
+	  </script>
+    <script type ="text/javascript">
+
+    </script>
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+	</head>
+	<body class="is-preload">
+
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+				<!-- Header -->
+					<header id="header" class="alt">
+						<span class="logo"><img src="images/presentation.svg" height=100 alt="" /></span>
+            <h1 id="status">Recording ...</h1>
+            <h1><span id="minutes"></span>:<span id="seconds"></span></h1>
+					</header>
+              <ul class="actions special">
+                <div id="stop_button">
+                 <li><a id="stop_recording" class="button">Stop Recording</a></li>
+                </div>
+                <div id="waiting_report">
+                 <img src="images/spinner.gif">
+                 <h2> Generating Report </h2>
+                </div>
+                <div id="report_button">
+                  <form action="/view_report" method="get">
+                 <li><input type="submit" class="button" value="View Report"></li>
+                 <input type="hidden" id="dir_name" name="dir_name" value="<%= dir_name %>">
+								 <input type="hidden" id="id" name="id" value="<%= id %>">
+							 </form>
+                </div>
+
+            </ul>
+
+
+
+
+			</div>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.scrollex.min.js"></script>
+			<script src="assets/js/jquery.scrolly.min.js"></script>
+			<script src="assets/js/browser.min.js"></script>
+			<script src="assets/js/breakpoints.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<script src="assets/js/main.js"></script>
+
+	</body>
+</html>

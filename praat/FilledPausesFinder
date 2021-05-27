@@ -1,0 +1,609 @@
+	#
+# This script is distributed under the GNU General Public License.
+#
+# by Jonas Lindh, 2005-2006
+#
+#########################################################################
+
+form Analyze pitch in files
+	comment Directory of sound files
+	text sound_directory E:\Users\Admin\Documents\workspace\auto_tagging\secondrun\
+	#text Filename output1.wav
+	sentence Sound_file_extension *.wav
+	comment Full path of the resulting text file:
+	text resultfile E:\Users\Admin\Documents\workspace\auto_tagging\secondrun\f0results.txt
+	text fp_info E:\Users\Admin\Documents\workspace\auto_tagging\secondrun\
+	comment Pitch analysis parameters
+	integer Window 11
+	positive Framerate 0.01
+	real Silence_threshold_(dB) -25
+	real Minimum_pause_duration_(s) 0.15
+	integer RemoveNoise 0
+endform
+
+
+# shorten variables
+silencedb = 'silence_threshold'
+minpause = 'minimum_pause_duration'
+#-----------------------------------------------------------------------------------------
+#Constants definition
+#------------------------------------------------------------------------------------------
+regularBins = 50
+binSize=4
+limitStd = 200
+nroMinFrames = 15
+thresholdFP = 0
+cleanFrom = 80
+cleanTo = 10000
+fpCount = 0
+currentStringFPInfo$ = "hola"
+##################################################################################################
+# Declaration of probability mass functions, obtained from manually tagged, textgrids to find filled
+#pauses and normal speech and collect this Data (See FilledPausesFinderDataCollector.praat) into csvs
+#that are postprocessed in matlab to get the pmfs of F1,F2 for normal and filleed paused samples (see
+#Matlab script F1F2StandardDeviationCsvReader.m)
+
+###################################################################################################
+#arrays
+normal_pmf_f1[1] = 0.000026179
+normal_pmf_f1[2] = 0.0018016
+normal_pmf_f1[3] = 0.0054785
+normal_pmf_f1[4] = 0.0089769
+normal_pmf_f1[5] = 0.013977
+normal_pmf_f1[6] = 0.018094
+normal_pmf_f1[7] = 0.023085
+normal_pmf_f1[8] = 0.027823
+normal_pmf_f1[9] = 0.0324
+normal_pmf_f1[10] = 0.035698
+normal_pmf_f1[11] = 0.037773
+normal_pmf_f1[12] = 0.038911
+normal_pmf_f1[13] = 0.039801
+normal_pmf_f1[14] = 0.04007
+normal_pmf_f1[15] = 0.039642
+normal_pmf_f1[16] = 0.038114
+normal_pmf_f1[17] = 0.036219
+normal_pmf_f1[18] = 0.034794
+normal_pmf_f1[19] = 0.032378
+normal_pmf_f1[20] = 0.030724
+normal_pmf_f1[21] = 0.027188
+normal_pmf_f1[22] = 0.026043
+normal_pmf_f1[23] = 0.024289
+normal_pmf_f1[24] = 0.021931
+normal_pmf_f1[25] = 0.020814
+normal_pmf_f1[26] = 0.019408
+normal_pmf_f1[27] = 0.017713
+normal_pmf_f1[28] = 0.016683
+normal_pmf_f1[29] = 0.015517
+normal_pmf_f1[30] = 0.013965
+normal_pmf_f1[31] = 0.013089
+normal_pmf_f1[32] = 0.012252
+normal_pmf_f1[33] = 0.011119
+normal_pmf_f1[34] = 0.010586
+normal_pmf_f1[35] = 0.009836
+normal_pmf_f1[36] = 0.0090364
+normal_pmf_f1[37] = 0.0084914
+normal_pmf_f1[38] = 0.0077846
+normal_pmf_f1[39] = 0.0069945
+normal_pmf_f1[40] = 0.0067113
+normal_pmf_f1[41] = 0.0064043
+normal_pmf_f1[42] = 0.0060996
+normal_pmf_f1[43] = 0.0057189
+normal_pmf_f1[44] = 0.0054428
+normal_pmf_f1[45] = 0.0054261
+normal_pmf_f1[46] = 0.0050192
+normal_pmf_f1[47] = 0.0044885
+normal_pmf_f1[48] = 0.0043671
+normal_pmf_f1[49] = 0.0042838
+normal_pmf_f1[50] = 0.0040101
+normal_pmf_f1[51] = 0.1135
+
+
+normal_pmf_f2[1] = 0.000057117
+normal_pmf_f2[2] = 0.000057117
+normal_pmf_f2[3] = 0.0004141
+normal_pmf_f2[4] = 0.0014969
+normal_pmf_f2[5] = 0.0028059
+normal_pmf_f2[6] = 0.0046527
+normal_pmf_f2[7] = 0.0066161
+normal_pmf_f2[8] = 0.0093434
+normal_pmf_f2[9] = 0.012116
+normal_pmf_f2[10] = 0.014258
+normal_pmf_f2[11] = 0.01695
+normal_pmf_f2[12] = 0.018872
+normal_pmf_f2[13] = 0.020348
+normal_pmf_f2[14] = 0.020902
+normal_pmf_f2[15] = 0.021459
+normal_pmf_f2[16] = 0.022202
+normal_pmf_f2[17] = 0.021957
+normal_pmf_f2[18] = 0.021912
+normal_pmf_f2[19] = 0.021088
+normal_pmf_f2[20] = 0.020381
+normal_pmf_f2[21] = 0.020484
+normal_pmf_f2[22] = 0.019586
+normal_pmf_f2[23] = 0.018944
+normal_pmf_f2[24] = 0.018523
+normal_pmf_f2[25] = 0.017813
+normal_pmf_f2[26] = 0.017575
+normal_pmf_f2[27] = 0.016557
+normal_pmf_f2[28] = 0.016293
+normal_pmf_f2[29] = 0.015836
+normal_pmf_f2[30] = 0.014846
+normal_pmf_f2[31] = 0.014843
+normal_pmf_f2[32] = 0.014344
+normal_pmf_f2[33] = 0.013456
+normal_pmf_f2[34] = 0.012535
+normal_pmf_f2[35] = 0.012801
+normal_pmf_f2[36] = 0.01209
+normal_pmf_f2[37] = 0.011595
+normal_pmf_f2[38] = 0.011331
+normal_pmf_f2[39] = 0.010981
+normal_pmf_f2[40] = 0.010712
+normal_pmf_f2[41] = 0.01065
+normal_pmf_f2[42] = 0.010295
+normal_pmf_f2[43] = 0.0096314
+normal_pmf_f2[44] = 0.0093315
+normal_pmf_f2[45] = 0.0091197
+normal_pmf_f2[46] = 0.0087461
+normal_pmf_f2[47] = 0.0083534
+normal_pmf_f2[48] = 0.0085819
+normal_pmf_f2[49] = 0.0081939
+normal_pmf_f2[50] = 0.0080868
+normal_pmf_f2[51] = 0.35004
+
+
+filled_pmf_f1[1] = 0.0027188
+filled_pmf_f1[2] = 0.083263
+filled_pmf_f1[3] = 0.13118
+filled_pmf_f1[4] = 0.10977
+filled_pmf_f1[5] = 0.086151
+filled_pmf_f1[6] = 0.071538
+filled_pmf_f1[7] = 0.061852
+filled_pmf_f1[8] = 0.048428
+filled_pmf_f1[9] = 0.04469
+filled_pmf_f1[10] = 0.039422
+filled_pmf_f1[11] = 0.033475
+filled_pmf_f1[12] = 0.031266
+filled_pmf_f1[13] = 0.028037
+filled_pmf_f1[14] = 0.024639
+filled_pmf_f1[15] = 0.024129
+filled_pmf_f1[16] = 0.02192
+filled_pmf_f1[17] = 0.016653
+filled_pmf_f1[18] = 0.019711
+filled_pmf_f1[19] = 0.015973
+filled_pmf_f1[20] = 0.014953
+filled_pmf_f1[21] = 0.008836
+filled_pmf_f1[22] = 0.0076466
+filled_pmf_f1[23] = 0.010365
+filled_pmf_f1[24] = 0.0057774
+filled_pmf_f1[25] = 0.0056075
+filled_pmf_f1[26] = 0.0059473
+filled_pmf_f1[27] = 0.0042481
+filled_pmf_f1[28] = 0.0039082
+filled_pmf_f1[29] = 0.0033985
+filled_pmf_f1[30] = 0.0027188
+filled_pmf_f1[31] = 0.0018692
+filled_pmf_f1[32] = 0.0015293
+filled_pmf_f1[33] = 0.00084962
+filled_pmf_f1[34] = 0.0023789
+filled_pmf_f1[35] = 0.0013594
+filled_pmf_f1[36] = 0.00033985
+filled_pmf_f1[37] = 0.00084962
+filled_pmf_f1[38] = 0.00084962
+filled_pmf_f1[39] = 0.00033985
+filled_pmf_f1[40] = 0.00033985
+filled_pmf_f1[41] = 0.00016992
+filled_pmf_f1[42] = 0.00016992
+filled_pmf_f1[43] = 0.00033985
+filled_pmf_f1[44] = 0.00033985
+filled_pmf_f1[45] = 0.00033985
+filled_pmf_f1[46] = 0.00033985
+filled_pmf_f1[47] = 0.00016992
+filled_pmf_f1[48] = 0.00033985
+filled_pmf_f1[49] = 0.00050977
+filled_pmf_f1[50] = 0.00050977
+filled_pmf_f1[51] = 0.019031
+
+
+filled_pmf_f2[1] = 0.0033985
+filled_pmf_f2[2] = 0.0033985
+filled_pmf_f2[3] = 0.026168
+filled_pmf_f2[4] = 0.048258
+filled_pmf_f2[5] = 0.050977
+filled_pmf_f2[6] = 0.049618
+filled_pmf_f2[7] = 0.057264
+filled_pmf_f2[8] = 0.063212
+filled_pmf_f2[9] = 0.054206
+filled_pmf_f2[10] = 0.058114
+filled_pmf_f2[11] = 0.046899
+filled_pmf_f2[12] = 0.04469
+filled_pmf_f2[13] = 0.039252
+filled_pmf_f2[14] = 0.039252
+filled_pmf_f2[15] = 0.035514
+filled_pmf_f2[16] = 0.031606
+filled_pmf_f2[17] = 0.027698
+filled_pmf_f2[18] = 0.027698
+filled_pmf_f2[19] = 0.025828
+filled_pmf_f2[20] = 0.020901
+filled_pmf_f2[21] = 0.020221
+filled_pmf_f2[22] = 0.017842
+filled_pmf_f2[23] = 0.019031
+filled_pmf_f2[24] = 0.012065
+filled_pmf_f2[25] = 0.013424
+filled_pmf_f2[26] = 0.011045
+filled_pmf_f2[27] = 0.010025
+filled_pmf_f2[28] = 0.010365
+filled_pmf_f2[29] = 0.0083263
+filled_pmf_f2[30] = 0.0074766
+filled_pmf_f2[31] = 0.0057774
+filled_pmf_f2[32] = 0.0059473
+filled_pmf_f2[33] = 0.0061172
+filled_pmf_f2[34] = 0.004418
+filled_pmf_f2[35] = 0.0049278
+filled_pmf_f2[36] = 0.0040782
+filled_pmf_f2[37] = 0.002209
+filled_pmf_f2[38] = 0.0035684
+filled_pmf_f2[39] = 0.0023789
+filled_pmf_f2[40] = 0.0033985
+filled_pmf_f2[41] = 0.0025489
+filled_pmf_f2[42] = 0.0032285
+filled_pmf_f2[43] = 0.0023789
+filled_pmf_f2[44] = 0.0033985
+filled_pmf_f2[45] = 0.0028887
+filled_pmf_f2[46] = 0.0011895
+filled_pmf_f2[47] = 0.0011895
+filled_pmf_f2[48] = 0.0025489
+filled_pmf_f2[49] = 0.0011895
+filled_pmf_f2[50] = 0.0023789
+filled_pmf_f2[51] = 0.053866
+
+
+
+
+# Here, you make a listing of all the sound files in a directory.
+
+Create Strings as file list... list 'sound_directory$'*'sound_file_extension$'
+numberOfFiles = Get number of strings
+
+
+
+# Check if the resultFP file exists:
+if fileReadable (resultfile$)
+	pause The resultfile 'resultfile$' already exists! Overwrite?
+	filedelete 'resultfile$'
+endif
+
+
+writeFileLine:resultfile$, ""
+
+# minimum pause duration
+min_pause_dur = 0.2
+# minimum duration of sounding parts (phrases)
+min_sound_dur = 0.1
+# minimum syllable duration
+min_syl_dur = 0.08
+#minimum frames in a chunk to be processed
+minimumframes = window
+
+# Go through all the sound files, one by one:
+###############################################################################################
+# 1.- First we create a TextGrid with a Tier for representing sound 
+# and silence along the whole audio file
+###############################################################################################
+
+for ifile to numberOfFiles
+	select Strings list
+	filename$ = Get string... ifile
+	# A sound file is opened...
+	Read from file... 'sound_directory$''filename$'
+	# Starting from here, you can add everything that should be repeated...
+	
+	soundname$ = selected$ ("Sound")
+
+
+	
+
+
+	######################	NOISE	#######################################
+	if removeNoise = 1
+		appendInfoLine: "Yoy want me to remove noise"
+		Remove noise... 0 0 0.025 'cleanFrom' 'cleanTo' 40 Spectral subtraction
+		Rename...  'soundname$'
+		Write to WAV file... 'sound_directory$''filename$'
+	endif
+	
+	soundID = selected("Sound")
+	
+	# Use intensity to get threshold
+   	To Intensity... 50 0 yes
+   	intid = selected("Intensity")
+
+
+   	# estimate noise floor
+   	minint = Get minimum... 0 0 Parabolic
+   	# estimate noise max
+   	maxint = Get maximum... 0 0 Parabolic
+   	#get .99 quantile to get maximum (without influence of non-speech sound bursts)
+   	max99int = Get quantile... 0 0 0.99
+
+   	# estimate Intensity threshold
+   	threshold = max99int + silencedb
+   	threshold2 = maxint - max99int
+   	threshold3 = silencedb - threshold2
+   	if threshold < minint
+       		threshold = minint
+   	endif
+	#Settings para el miv acoustic magic dentro del domo con el aire encendido
+	#threshold3 = -25.0
+	#minpause = 0.1
+	
+  	# get pauses (silences) and speakingtime
+   	To TextGrid (silences)... threshold3 minpause 0.1 silent sounding
+   	Write to text file... 'sound_directory$''soundname$'.TextGrid
+	select all
+	minus Strings list
+	Remove
+	
+endfor
+################################################################################################
+#2.- With the recently created Textgrid, we iterate over the interval tier discriminating 
+# silence parts and analizing only the tagged as sound
+###############################################################################################
+for ifile to numberOfFiles
+	select Strings list
+	filename$ = Get string... ifile
+	# A sound file is opened...
+	Read from file... 'sound_directory$''filename$'
+	# Starting from here, you can add everything that should be repeated...
+	soundID = selected("Sound")
+	soundname$ = selected$ ("Sound")
+	
+	Read from file... 'sound_directory$''soundname$'.TextGrid
+	gridID = selected("TextGrid")
+
+	#Insert interval tier... 1 'sound'
+	
+	
+	writeInfoLine: "Results:"
+	numberOfTiers = Get number of tiers
+	appendInfoLine: "Number of tiers:",'numberOfTiers'
+	
+	
+	Insert interval tier... numberOfTiers+1 'sound'	
+	noi = Get number of intervals... 1
+
+	appendInfoLine: "Number of sounds:",'noi'
+
+	#########################################################
+	sep$ = ","
+	dir_fp_info$ = fp_info$ + filename$ +".txt"
+	#if fileReadable (dir_fp_info$)
+	#	pause The resultfile 'dir_fp_info$' already exists! Overwrite?
+	#	filedelete 'dir_fp_info$'
+	#endif
+	
+
+	##########################################################
+
+	# Create a Table with no rows
+	table = Create Table with column names: "table", 0, "A B C"
+	
+
+	select 'soundID'
+	#Formants Extraction
+	To Formant (burg)... 0 5 5500 0.025 50
+
+	dur = Get total duration
+	startTime = Get start time
+	endTime = Get end time
+	
+	
+	
+	
+	nchunks = dur/window
+	#writeInfoLine: "Results:"
+	
+	for i to noi
+		select 'gridID'
+		label$ = Get label of interval... 1 'i'
+		
+		if label$ = "sounding"		
+
+
+			start = Get start point... 1 'i'
+			end = Get end point... 1 'i'
+			numberOfTimeSteps = (end - start) / framerate
+			#appendInfoLine: "start" ,'start'
+			#appendInfoLine: "end" ,'end'
+			
+			count_fp_frames = 0
+			last_fp_count = 0
+			isFilledFrame = 0
+			
+			if numberOfTimeSteps >= window
+				step = (window/2) + 1				
+				maxNumberOfTimeSteps = 	numberOfTimeSteps -(window/2)
+				
+				
+				
+				while step <= maxNumberOfTimeSteps
+				
+					tmin = start + (step - 1) * framerate
+	    				tmax = tmin + framerate
+					
+	    				tminWindowStart = start + (step - 1 - (window/2))*framerate
+	    				tminWindowEnd = start + (step - 1 + (window/2))*framerate
+	    				tmaxWindowEnd = tminWindowEnd + framerate
+					
+					# get F1 and F2 values
+					select Formant 'soundname$'
+					#appendInfoLine: "Select formant"
+					#f1 = Get value at time... 1 'begPos' Hertz Linear
+					#f2 = Get value at time... 2 'begPos' Hertz Linear
+					
+					
+					stdevF1 = Get standard deviation: 1, tminWindowStart, tmaxWindowEnd, "Hertz"
+					stdevF2 = Get standard deviation: 2, tminWindowStart, tmaxWindowEnd, "Hertz"
+					
+					#appendInfoLine: 'stdevF1:2',"		",'stdevF2:2'
+					indexF1 = -1
+					indexF2 = -1
+					#Getting Indexes in the distribution of standard deviation
+					#F1
+					#-------------------------------------------------------------
+					#appendInfoLine: 'stdevF1:2'
+					if stdevF1 <= limitStd
+				
+						for k from 0 to (regularBins -1)
+							lowBound = k*binSize
+							highBound = lowBound + binSize
+							
+							if stdevF1 >= lowBound and stdevF1 <= highBound
+								indexF1 = k + 1
+								k = regularBins 
+							endif
+						endfor
+					else
+						indexF1 = regularBins + 1
+					endif
+
+					filled_dist_value = filled_pmf_f1[indexF1]
+					normal_dist_value = normal_pmf_f1[indexF1]
+
+					#F2
+					#--------------------------------------------------------------
+					if stdevF2 <= limitStd
+				
+						for k from 0 to (regularBins -1)
+							lowBound = k*binSize
+							highBound = lowBound + binSize
+							
+							if stdevF2 >= lowBound and stdevF2 <= highBound
+								indexF2 = k + 1
+								k = regularBins 
+							endif
+						endfor
+					else
+						indexF2 = regularBins + 1
+					endif
+
+					filled_F1_dist_value = filled_pmf_f1[indexF1]
+					normal_F1_dist_value = normal_pmf_f1[indexF1]
+					
+					filled_F2_dist_value = filled_pmf_f2[indexF2]
+					normal_F2_dist_value = normal_pmf_f2[indexF2]
+					
+					ansF1 = -1
+					ansF2 = -1
+					
+					if filled_F1_dist_value <> undefined and normal_F1_dist_value <> undefined and filled_F2_dist_value <> undefined and normal_F2_dist_value <> undefined
+						#appendInfoLine: "Correct Values"
+						ansF1 = log10(filled_F1_dist_value/normal_F1_dist_value)
+						ansF2 = log10(filled_F2_dist_value/normal_F2_dist_value)												
+						
+						if ansF1 > thresholdFP and ansF2 > thresholdFP
+							isFilledFrame = 1
+						else
+							isFilledFrame = 0
+						endif
+						
+
+						select 'gridID'
+						if isFilledFrame = 1
+						
+							if count_fp_frames = 0
+								tStartFP = tmin
+								#appendInfoLine: "False Start attempt at: ",'tStartFP:2'
+							endif
+							last_fp_count = count_fp_frames
+							
+							count_fp_frames = count_fp_frames +1						
+							tEndFP = tmax
+							
+							if step +1 > maxNumberOfTimeSteps
+								if last_fp_count > nroMinFrames
+									#select 'gridID'
+									#appendInfoLine: "Select GridID"
+									Insert boundary... numberOfTiers+1 tStartFP
+									Insert boundary... numberOfTiers+1 tEndFP
+									tmidLabel = (tEndFP + tStartFP)/2
+									interv = Get interval at time... numberOfTiers+1 tmidLabel
+                    							Set interval text... numberOfTiers+1 interv "FP"
+									#numberOfTiers+1
+									fpCount = fpCount +1
+
+									
+
+
+									
+									#writeFileLine: dir_fp_info$,'fpCount'
+									appendFileLine: dir_fp_info$,'fpCount',",",'tStartFP',",",'tEndFP'
+									
+
+									#appendInfoLine: "count_fp:",'count_fp_frames'," tstartBound:",'tStartFP'," tendbound:",'tEndFP',"step ",'step'," of ",'maxNumberOfTimeSteps'
+								endif
+							endif
+						else
+							if last_fp_count > nroMinFrames
+								
+								#select 'gridID'
+								#appendInfoLine: "Select GridID"
+								Insert boundary... numberOfTiers+1 tStartFP
+								Insert boundary... numberOfTiers+1 tEndFP
+								tmidLabel = (tEndFP + tStartFP)/2
+								interv = Get interval at time... numberOfTiers+1 tmidLabel
+                    						Set interval text... numberOfTiers+1 interv "FP"
+								fpCount  = fpCount + 1
+
+								
+								#writeFileLine: dir_fp_info$,'fpCount'
+								appendFileLine: dir_fp_info$,'fpCount',",",'tStartFP',",",'tEndFP'
+								
+								#appendInfoLine: "count_fp:",'count_fp_frames'," tstartBound:",'tStartFP'," tendbound:",'tEndFP',"step ",'step'," of ",'maxNumberOfTimeSteps'
+						
+
+								
+
+
+																
+							endif
+							count_fp_frames = 0
+							last_fp_count = count_fp_frames	
+						endif
+						#appendInfoLine: "tstartBound:",'tStartFP'," tendbound:",'tEndFP',"CurrentFP Frames: ",'count_fp_frames'
+					endif
+					
+					
+					#appendInfoLine: 'tmin:2',",", 'tmax:2',",",'stdevF1:2',",",'stdevF2:2',",",'filled_dist_value:2',",",'normal_dist_value:2',",",'ans:2', ",",'index'
+					appendFileLine:resultfile$, 'tmin:2',",", 'tmax:2',",",'stdevF1:2',",",'stdevF2:2',",",'filled_F1_dist_value:2',",",'normal_F1_dist_value:2',",",'ansF1:2', ",",'indexF1',",",'filled_F2_dist_value:2',",",'normal_F2_dist_value:2',",",'ansF2:2', ",",'indexF2'
+					#outLine$ =soundname$ + tab$ + "'f1:1'" + tab$ + "'f2:1'" + tab$ + "'dur:4'" + newline$
+					#outLine$ >> 'dirName$''resultfile$'
+					step = step + 1
+				endwhile
+			endif
+		endif
+
+
+
+
+
+	endfor
+	
+	if fpCount < 1
+		#appendInfoLine: "ninguno condicional de FP BEFORE"
+		appendFileLine: dir_fp_info$,'fpCount',",","null",",","null"
+		#appendInfoLine: "ninguno condicional de FP AFTER" 
+
+	endif
+
+	appendInfoLine: "write to text","number of FP here : ",'fpCount'
+
+
+	
+
+
+	Write to text file... 'sound_directory$''soundname$'.TextGrid
+
+endfor
+Remove
+#######################
+

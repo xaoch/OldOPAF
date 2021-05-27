@@ -1,0 +1,389 @@
+<!DOCTYPE HTML>
+<!--
+	Stellar by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>Oral Presentation Automatic Feedback (OPAF)</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<script src="assets/js/jquery.min.js"></script>
+    <script src="assets/js/vis.js"></script>
+		<link rel="stylesheet" type="text/css" media="screen" href="assets/css/jquery.fancybox-1.3.4.css" />
+    <style type="text/css">
+        a.fancybox img {
+            border: none;
+        }
+
+				#myImg {
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+#myImg:hover {opacity: 0.7;}
+
+/* The Modal (background) */
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  padding-top: 100px; /* Location of the box */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgb(0,0,0); /* Fallback color */
+  background-color: rgba(0,0,0,0.9); /* Black w/ opacity */
+}
+
+/* Modal Content (Image) */
+.modal-content {
+  margin: auto;
+  display: block;
+  width: 80%;
+  max-width: 700px;
+}
+
+/* Caption of Modal Image (Image Text) - Same Width as the Image */
+#caption {
+  margin: auto;
+  display: block;
+  width: 80%;
+  max-width: 700px;
+  text-align: center;
+  color: #ccc;
+  padding: 10px 0;
+  height: 150px;
+}
+
+/* Add Animation - Zoom in the Modal */
+.modal-content, #caption {
+  animation-name: zoom;
+  animation-duration: 0.6s;
+}
+
+@keyframes zoom {
+  from {transform:scale(0)}
+  to {transform:scale(1)}
+}
+
+/* The Close Button */
+.close {
+  position: absolute;
+  top: 15px;
+  right: 35px;
+  color: #f1f1f1;
+  font-size: 40px;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+.close:hover,
+.close:focus {
+  color: #bbb;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* 100% Image Width on Smaller Screens */
+@media only screen and (max-width: 700px){
+  .modal-content {
+    width: 100%;
+  }
+}
+
+    </style>
+    <link href="assets/css/vis-timeline-graph2d.min.css" rel="stylesheet" type="text/css" />
+    <style type="text/css">
+        body {
+
+        }
+
+        .vis-timeline {
+          border: 2px solid purple;
+          font-size: 12pt;
+          background: #ffffff;
+        }
+
+        .vis-item {
+          border-color: #F991A3;
+          background-color: pink;
+          font-size: 15pt;
+          color: white;
+          box-shadow: 5px 5px 20px rgba(128,128,128, 0.5);
+        }
+
+        .vis-item,
+        .vis-item.vis-line {
+          border-width: 3px;
+        }
+
+        .vis-item.vis-dot {
+          border-width: 10px;
+          border-radius: 10px;
+        }
+
+        .vis-item.vis-selected {
+          border-color: green;
+          background-color: lightgreen;
+        }
+
+        .vis-time-axis .vis-text {
+          color: purple;
+          padding-top: 10px;
+          padding-left: 10px;
+        }
+
+        .vis-time-axis .vis-text.vis-major {
+          font-weight: bold;
+        }
+
+        .vis-time-axis .vis-grid.vis-minor {
+          border-width: 2px;
+          border-color: pink;
+        }
+
+        .vis-time-axis .vis-grid.vis-major {
+          border-width: 2px;
+          border-color: #F991A3;
+        }
+
+				.vis-item.v_high {
+        background-color: #8cc9f0;
+        border-color: #8cc9f0;
+
+      }
+
+			.vis-item.silence {
+				background-color: grey;
+				border-color: darkgrey;
+			}
+
+			.vis-item.v_medium {
+				background-color: #a89cc8;
+				border-color: #a89cc8;
+			}
+
+			.vis-item.v_low {
+				background-color: #efa8b0;
+				border-color: #efa8b0;
+			}
+
+			.vis-item.v_fast {
+				background-color: #efa8b0;
+				border-color: #efa8b0;
+			}
+
+			.vis-item.v_slow {
+				background-color: #efa8b0;
+				border-color: #efa8b0;
+			}
+
+        .vis-item.correct {
+        background-color: #8cc9f0;
+        border-color: #8cc9f0;
+
+      }
+
+      /* create a custom sized dot at the bottom of the red item */
+      .vis-item.incorrect {
+        background-color: #efa8b0;
+        border-color: #efa8b0;
+      }
+      </style>
+
+
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+	</head>
+	<body class="is-preload">
+
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+				<!-- Header -->
+					<header id="header" class="alt">
+						<span class="logo"><img src="images/presentation.svg" height=100 alt="" /></span>
+						<h1>OPAF</h1>
+						<p>Presentation Report<br />
+					  <h1>For: <%= id %></h1>
+						<h1>When: <%= date %></h1>
+					</header>
+
+
+
+				<!-- Main -->
+					<div id="main">
+
+
+						<!-- Second Section -->
+							<section id="reports" class="main special">
+								<header class="major">
+									<h2>Summary</h2>
+									<p>This is an automated report from your presentation.  Six dimensions were evaluated:</p>
+									<ul align="left">
+										<li><b>Gaze</b>: If your gaze was directed to the audience.</li>
+										<li><b>Posture</b>: If you mantained an open posture during your presentation.</li>
+										<li><b>Volume</b>: If the volume of your voice was adequate.</li>
+										<li><b>Articulation</b>: If you mantained a adequate articulation rate (talking speed) during the presentation.</li>
+										<li><b>Filled Pauses</b>: If you had filled pauses (e.g. "ehm", "umhh", "aaah") during your presentation.</li>
+										<li><b>Slides</b>: If your slides contained had an adqueate amount of text and the font was big enough to be read.</li>
+									</ul>
+								</header>
+								<ul class="statistics">
+									<li class="<%= data.summary.gazeStyle %>">
+										<span class="icon solid far fa-eye"></span>
+										<strong><%= data.summary.gazeValue %></strong> Gaze
+									</li>
+									<li class="<%= data.summary.postureStyle %>">
+										<span class="icon solid fas fa-walking"></span>
+										<strong><%= data.summary.postureValue %></strong> Posture
+									</li>
+									<li class="<%= data.summary.volumeStyle %>">
+										<span class="icon solid fa-signal"></span>
+										<strong><%= data.summary.volumeValue %></strong> Volume
+									</li>
+									<li class="<%= data.summary.articulationStyle %>">
+										<span class="icon solid fas fa-tachometer-alt"></span>
+										<strong><%= data.summary.articulationValue %></strong> Articulation
+									</li>
+									<li class="<%= data.summary.fpStyle %>">
+										<span class="icon solid fas fa-pause"></span>
+										<strong><%= data.summary.fpValue %></strong> Filled Pauses
+									</li>
+									<li class="<%= data.summary.slidesStyle %>">
+										<span class="icon solid fas fa-file-powerpoint"></span>
+										<strong><%= data.summary.slidesValue %></strong> Slides
+									</li>
+								</ul>
+							</section>
+							<section id="overview" class="main special">
+                <header class="major">
+                  <h2>Overview</h2>
+                  <p>This is a more detailed view of the evaluated dimensions during your presentation:</p>
+                </header>
+
+                <div id="visualization"></div>
+
+                <script type="text/javascript">
+                  // DOM element where the Timeline will be attached
+                  var container = document.getElementById('visualization');
+                  var groups = new vis.DataSet([
+                    {id: 0, content: 'Gaze', value: 1},
+                    {id: 1, content: 'Posture', value: 2},
+										{id: 2, content: 'Volume', value: 3},
+										{id: 3, content: 'Articulation', value: 4},
+										{id: 4, content: 'Slides', value: 5},
+										{id: 5, content: 'Filled Pauses', value: 6},
+
+
+                  ]);
+
+                  var data_overview;
+                  var options = {
+                    showMajorLabels: false,
+                    max:<%= data["videoData"].length%>,
+                    min:0,
+                    stack: false,
+                    stackSubgroups: false,
+                  };
+
+                  // Create a DataSet (allows two way data-binding)
+
+                         data_overview=<%- vis_data %>;
+
+                         var items = new vis.DataSet(data_overview);
+                         var timeline = new vis.Timeline(container, items, options);
+                         timeline.setGroups(items);
+                         timeline.setGroups(groups);
+												 timeline.on('click', function (properties) {
+                              multimedia=items.get(properties.item).multimedia;
+															if(multimedia=="sound")
+															{
+																wavfile=items.get(properties.item).soundfile;
+																var audio = new Audio("recordings/<%= dir_name %>/Audio/segments/"+wavfile); // define your audio
+                              	audio.play();
+															}
+															if(multimedia=="fp")
+															{
+																wavfile=items.get(properties.item).soundfile;
+																var audio = new Audio("recordings/<%= dir_name %>/Audio/fp/"+wavfile); // define your audio
+                              	audio.play();
+															}
+															if(multimedia=="image")
+															{
+                                src=items.get(properties.item).image_source;
+																var modal = document.getElementById("myModal");
+																var img = document.getElementById("myImg");
+																var modalImg = document.getElementById("img01");
+
+																var span = document.getElementsByClassName("close")[0];
+																span.onclick = function() {
+  																modal.style.display = "none";
+																}
+																modal.style.display = "block";
+  															modalImg.src = src;
+
+															}
+                        });
+
+
+
+                  // Configuration for the Timeline
+
+
+                  // Create a Timeline
+
+
+                </script>
+							</section>
+
+							<section id="recommendations" class="main special">
+								<header class="major">
+									<h2>Recommendations</h2>
+									<p>Based on your performance, OPAF recommends the following:</p>
+									<ul align="left">
+										<%- data.summary.gazeRecommendation %>
+										<%- data.summary.postureRecommendation %>
+										<%- data.summary.volumeRecommendation %>
+										<%- data.summary.articulationRecommendation %>
+										<%- data.summary.fpRecommendation %>
+										<%- data.summary.slidesRecommendation %>
+									</ul>
+								</header>
+
+							</section>
+				<!-- Footer -->
+					<footer id="footer">
+
+					</footer>
+
+			</div>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.scrollex.min.js"></script>
+			<script src="assets/js/jquery.scrolly.min.js"></script>
+			<script src="assets/js/browser.min.js"></script>
+			<script src="assets/js/breakpoints.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<script src="assets/js/main.js"></script>
+			<script src="assets/js/custom-file-input.js"></script>
+
+
+			<script type="text/javascript" src="assets/js/jquery-migrate-1.2.1.min.js"></script>
+			<script type="text/javascript" src="assets/js/jquery.fancybox-1.3.4.pack.min.js"></script>
+			<div id="myModal" class="modal">
+  			<!-- The Close Button -->
+  			<span class="close">&times;</span>
+				<!-- Modal Content (The Image) -->
+  			<img class="modal-content" id="img01">
+  			<!-- Modal Caption (Image Text) -->
+  		  <div id="caption"></div>
+		  </div>
+	</body>
+</html>
